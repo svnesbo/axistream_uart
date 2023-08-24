@@ -50,6 +50,100 @@ Running the script with `-h` will print a help menu. Some interesting arguments 
 
 | [Part 1](https://github.com/svnesbo/axistream_uart/tree/part1) | [Part 1 - Solution](https://github.com/svnesbo/axistream_uart/tree/part1_solution) |
 
+In the `src/` directory you will find the following VHDL files:
+
+```
+axistream_uart.vhd
+baud_gen.vhd
+uart_rx.vhd
+uart_tx.vhd
+```
+
+The top-level entity for the AXI-Stream UART is in `axistream_uart.vhd`. This file is completed already. You can see it has the two AXI-Stream interfaces we want for the module, which are connected to an instance of `uart_rx` and an instance of `uart_tx`.
+
+### Baud generator
+
+The `baud_gen` module implements a simple counter that counts the number of clock cycles in a baud period, based on the generic parameters for baud rate and clock frequency (`GC_BAUDRATE` and `GC_CLK_FREQ`).
+
+The module restarts the baud counter on the rising edge of the `enable` signal. It will count indefinetely for as long as `enable` is held high.
+
+A pulse (1 clock cycle long) is generated on the `baud_pulse` output for each baud period. Depending on the value of the `GC_BAUD_RX` parameter, it is possible to have the baud pulse generated at:
+- `GC_BAUD_RX=false`: The beginning of a baud period - first pulse when `enable` goes high
+- `GC_BAUD_RX=true`: The middle of a baud period - first pulse 1/2 baud period after `enable` goes high
+
+The first mode (`GC_BAUD_RX=false`) is the intended mode for the transmit state machine (FSM), because you want to start transmitting a bit immediately, and then wait a full baud period before transmitting the next bit.
+
+The second mode (`GC_BAUD_RX=true`) is the intended mode for the receive FSM, because for the receiver you would want the sample point to be in the middle of a bit period.
+
+
+### UART Transmit FSM
+
+The `uart_tx.vhd` file has the necessary entity and port declarations, some suggested signal declarations, an instance of the `baud_gen` module, but nothing else. You will implement the necessary logic for a state machine that can perform the AXI-Stream handshake and transmit bytes on the UART's Tx line.
+
+A suggested state diagram is shown in the figure below:
+
+![UART Tx FSM](doc/uart_tx_fsm.drawio.png)
+
+The transmit logic can be very easily implemented with two states:
+- Idle state:
+  - The AXI-S tready signal is asserted, since we are not busy transmitting and can accept a byte to transmit
+  - Performs the AXI-S handshake
+  - When the handshake is done (tready and tvalid both asserted):
+    - Accept the data byte (tdata)
+	- Deassert tready
+	- Setup a 10-bit vector with the bits to transmit: {stop-bit, tdata[7:0], start-bit} (where start bit is '0', and stop bit is '1').
+	- Proceeds to transmit state 
+- Transmit STATE:
+  - Enable the baud generator
+  - At the baud pulses:
+    - Output the next bit from the 10-bit vector
+  - Wait for an additional baud after writing the last bit - to allow a full baud period for the stop bit
+  - When all bits have been transmitted:
+    - Return to the idle state
+
+Don't worry about compiling and running the code now. We will do that in [Part 2](https://github.com/svnesbo/axistream_uart/tree/part2).
+
+### UART Receive FSM
+
+~~The `uart_rx.vhd` file is missing. You will have to implement it in its entirety.~~
+
+A suggested state diagram is shown below. In this case, there are a few more suggested states since the receiver has to distinguish between start/stop/data bits and perform error checking.
+
+![UART Rx FSM](doc/uart_rx_fsm.drawio.png)
+
+**Some pointers:**
+
+Idle state:
+- The idle value of UART Tx/Rx lines is '1' (high).
+- Detect the transition from '1' -> '0' in the idle state of the FSM
+  - Start the baud generator (it should generate baud pulses in the middle of baud periods)
+  - Proceed to the state to receive start bit
+
+Receive start bit state:
+- Sample the bit when we get the baud pulse
+- Verify correct value of start bit.
+  - '0' (correct): Proceed to receive data
+  - '1' (incorrect): Go to error state
+
+Receive data state:
+- Sample 8 bits (at baud pulse)
+  - Shift them into an 8-bit vector
+  - We receive and transmit LSB-first on the UART
+
+Receive stop bit:
+- Sample stop bit and verify correct value:
+  - '1' (correct): Output received byte on AXI-Stream, return to idle state.
+  - '0' (incorrect): Don't output received byte. Go to error state.
+
+Error state:
+- Pulse error output
+- Return to idle state
+
+
+**Solution:**
+
+If you want to skip this part, need inspiration, or if you are simply stuck, there is a link to a fully working solution at the top of this section.
+
 
 ## Part 2 - Build and simulate using HDLregression
 
