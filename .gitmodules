@@ -1,3 +1,6 @@
 [submodule "extern/UVVM"]
 	path = extern/UVVM
 	url = https://github.com/UVVM/UVVM.git
+[submodule "extern/hdlregression"]
+	path = extern/hdlregression
+	url = https://github.com/HDLUtils/hdlregression.git
