@@ -206,6 +206,14 @@ Now, try to remove the `--- hdlregression:tb` from the testbench, and re-run the
 
 | [Part 3](https://github.com/svnesbo/axistream_uart/tree/part3) | [Part 3 - Solution](https://github.com/svnesbo/axistream_uart/tree/part3_solution) |
 
+For the third exercise two new files have appeared in the `src/tb` directory. These are files for a UVVM-based test bench and test harness that we will write.
+
+![UVVM-based testbench and harness for the AXI-Stream UART](doc/axistream_uart_testbench.png)
+
+It's probably a good idea to first setup the harness in the `axistream_uart_uvvm_th.vhd` file. It should have an instance of the Device Under Test (DUT), which is our UART, as well as instances of the verification components that we will use (the UVVM VVCs, or VHDL Verification Components), and the necessary signals to connect them all together.
+
+In the testbench we have to create an instance of the harness and signals that port map to the harness (if any, the VVCs are controlled via UVVM commands, so it is fully possible to write a harness with no port signals). Technically it is not required in anyway to separate the harness and test bench, but it makes the test bench less cluttered. The testbench will then consist primarily of the "sequencer", the VHDL process where we execute VVC procedure calls to make the VVCs interact with the DUT, such as sending and receiving data, or expecting to receive data of a certain value.
+
 
 ## Part 4 - Extend the UVVM-based testbench with individual test cases
 
