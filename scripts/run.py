@@ -5,12 +5,11 @@ sys.path.append('../extern/hdlregression')
 from hdlregression import HDLRegression
 
 def init(hr):
-    # Add RTL code for baud gen module
-    hr.add_files("../src/rtl/baud_gen.vhd", "work")
+    # Add RTL code for AXI-Stream UART
+    hr.add_files("../src/rtl/*.vhd", "work")
 
-    # Todo:
-    # - Add remaining .vhd files for RTL code and testbench
-
+    # Add testbench code for AXI-Stream UART
+    hr.add_files("../src/tb/axistream_uart_simple_tb.vhd", "work")
 
 def main():
     hr = HDLRegression()
