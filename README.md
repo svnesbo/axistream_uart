@@ -149,6 +149,58 @@ If you want to skip this part, need inspiration, or if you are simply stuck, the
 
 | [Part 2](https://github.com/svnesbo/axistream_uart/tree/part2) | [Part 2 - Solution](https://github.com/svnesbo/axistream_uart/tree/part2_solution) |
 
+In this part you will find two new files. The first is this testbench file: `src/tb/axistream_uart_simple_tb.vhd`. This is a very rudimentary testbench. It does not require any work on your part and can be used for now to compile your code and simulate it. Stimuli is generated using a combinations of signal assignments and wait statements. This is an example of how we **don't** want to write testbenches. It is a lot of work and does not scale at all, it is error prone, and it is not self-checking but requires manual verification of waveforms. So we will **replace** this testbench with a UVVM-based one in part 3.
+
+The other new file is a run script for the simulation: `scripts/run.py`. This script is based on Python and the HDLregression. HDLregression is a "test runner" capable of compiling and running testbench simulations. It can be used for regression testing of many testbenches (and test cases), but we are not going to use use the regression capabilities of HDLregression here.
+
+The `run.py` file is only a template - you will have to add a couple of lines to compile all your code. When it's all set up you can run the testbench like this to have the Modelsim GUI open:
+```
+cd run/
+python ../scripts/run.py -tc axistream_uart_simple_tb.tb -g
+```
+
+It's recommended to run the script from the `run/` directory (since Modelsim generates a lot of build and log files). If it's the first time you are compiling your code then it's more than likely that you will have to fix some compilation errors.
+
+But when the simulation finally compiles and runs, you can expect the simulated waveform to look similar to the picture below. It shows the waveform of all the signals in the design after running the simulation. You can either add them manually and run the simulation using the GUI, or run the following commands in the Modelsim Transcript window to achieve the same:
+
+```
+add wave -r /*
+run -all
+```
+
+![Modelsim waveform for simulation of the simple testbench](doc/modelsim_waveform_simple_tb.png)
+
+By inspection you can tell that we were able to transmit the byte 0xAF with the UART, and also able to receive the byte 0xBC.
+
+**Identifying files as testbenches for HDLregression**
+
+Take special note of this line at the top of `axistream_uart_simple_tb.vhd`:
+
+```
+--- hdlregression:tb
+```
+
+HDLregression does **not** assume that filenames that include `_tb` are testbenches. It is this comment line that actually tells HDLregression that the entity contained in this file is a testbench that can be simulated. Try running this command to list the available testbenches/cases:
+
+```
+python ../scripts/run.py -ltc
+```
+
+The output should look something like this:
+```
+====================================================================================================================================================
+  HDLRegression version 0.46.2
+  See /doc/hdlregression.pdf for documentation.
+====================================================================================================================================================
+
+
+Scanning files...
+Building test suite structure...
+TC:1 - axistream_uart_simple_tb.tb
+```
+
+Now, try to remove the `--- hdlregression:tb` from the testbench, and re-run the command. You will see that the line `TC:1 - axistream_uart_simple_tb.tb` has disappeared from the output so you can no longer simulate the testbench.
+
 
 ## Part 3 - Write a UVVM-based testbench for the UART
 
