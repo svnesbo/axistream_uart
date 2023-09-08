@@ -19,6 +19,11 @@ end entity uart_tx;
 
 architecture rtl of uart_tx is
 
+  signal baud_gen_enable : std_logic;
+  signal baud_pulse      : std_logic;
+  signal transmit_data   : std_logic_vector(0 to 9);
+  signal bit_counter     : natural range 0 to 10;
+
   type t_uart_tx_fsm is (ST_IDLE, ST_TRANSMIT);
   signal fsm_state : t_uart_tx_fsm;
 
@@ -39,21 +44,52 @@ begin
   begin
     if rising_edge(clk) then
 
+      baud_gen_enable <= '0';
+
       case fsm_state is
         when ST_IDLE =>
-          -- Wait for data on s_axis
-          -- Perform AXI-Stream handshake
-          -- Setup stop bit + 8 data bits + start bit
-          -- Start transmit
+          txd         <= '1';
+          bit_counter <= 0;
+
+          -- AXI-S handshake done?
+          if s_axis_transmit_tready = '1' and s_axis_transmit_tvalid = '1' then
+            s_axis_transmit_tready    <= '0';
+            transmit_data(0)          <= '0';                    -- Start bit
+
+            -- Data bits
+            for bit_num in 0 to 7 loop
+              transmit_data(1+bit_num)  <= s_axis_transmit_tdata(7-bit_num);
+              transmit_data(1+bit_num)  <= s_axis_transmit_tdata(bit_num);
+            end loop;
+            
+            transmit_data(9)          <= '1';                    -- Stop bit
+            baud_gen_enable           <= '1';
+            fsm_state                 <= ST_TRANSMIT;
+          else
+            s_axis_transmit_tready <= '1';
+          end if;
 
         when ST_TRANSMIT =>
-          -- At baud_pulse:
-          -- Push out one bit at a time on txd
+          baud_gen_enable <= '1';
+
+          if baud_pulse = '1' then
+
+            if bit_counter = 10 then
+              -- Stop bit has been transmitted
+              fsm_state <= ST_IDLE;
+            else
+              txd         <= transmit_data(bit_counter);
+              bit_counter <= bit_counter + 1;
+            end if;
+          end if;
 
       end case;
 
       if rst = '1' then
-        -- Reset
+        fsm_state              <= ST_IDLE;
+        s_axis_transmit_tready <= '0';
+        baud_gen_enable        <= '0';
+        txd                    <= '1';
       end if;
     end if;
   end process p_uart_tx_fsm;

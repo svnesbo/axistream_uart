@@ -16,27 +16,41 @@ entity baud_gen is
 end entity baud_gen;
 
 architecture rtl of baud_gen is
+  constant C_COUNT_VAL : natural := GC_CLK_FREQ / GC_BAUDRATE;
+
+  signal enable_d1 : std_logic;
+  signal counter   : natural range 0 to C_COUNT_VAL-1;
   
 begin
 
   p_baud_gen: process (clk) is
   begin
     if rising_edge(clk) then
+      baud_pulse <= '0';
+      enable_d1  <= enable;
 
-      -- Baud generator logic should be implemented here.
-      -- This is how the module should work:
-      -- * A counter runs freely when the enable signal is active
-      -- * The counter wraps around at a value depending on the generic
-      --   parameters, giving it a period corresponding to the desired baud period
-      -- * The counter stops when enable is not active
-      -- * The counter restarts when enable goes from inactive to active
-      -- * The output baud_pulse is pulsed for one clock cycle when:
-      --   GC_BAUD_RX=false: At the end of a baud period (when the counter wraps around)
-      --   GC_BAUD_RX=true:  At the middle of a baud period (counter has middle
-      --   value))
+      if enable = '1' and enable_d1 = '0' then
+        -- Initialize on rising edge of enable
+        if GC_BAUD_RX then
+          counter <= C_COUNT_VAL/2;
+        else
+          counter <= 0;
+        end if;
+
+      elsif enable = '1' then
+        -- Generate pulses while enabled
+
+        if counter = C_COUNT_VAL-1 then
+          counter    <= 0;
+          baud_pulse <= '1';
+        else
+          counter <= counter + 1;
+        end if;
+      end if;
 
       if rst = '1' then
-        -- Reset registers here
+        enable_d1  <= '0';
+        baud_pulse <= '0';
       end if;
     end if;
 
