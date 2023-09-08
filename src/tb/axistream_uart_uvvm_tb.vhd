@@ -9,7 +9,20 @@ use ieee.numeric_std.all;
 library std;
 use std.env.all;
 
--- Todo: Include necessary UVVM libraries
+library uvvm_util;
+context uvvm_util.uvvm_util_context;
+
+library uvvm_vvc_framework;
+use uvvm_vvc_framework.ti_vvc_framework_support_pkg.all;
+
+library bitvis_vip_axistream;
+context bitvis_vip_axistream.vvc_context;
+
+library bitvis_vip_uart;
+context bitvis_vip_uart.vvc_context;
+
+library bitvis_vip_clock_generator;
+context bitvis_vip_clock_generator.vvc_context;
 
 entity axistream_uart_uvvm_tb is
   generic (
@@ -28,14 +41,25 @@ architecture tb of axistream_uart_uvvm_tb is
   constant C_AXIS_VVC_RECEIVE_IDX  : natural := 1;
   constant C_UART_VVC_IDX          : natural := 0;
 
+  --------------------------------------------------------------------------------
+  -- Signal declarations
+  --------------------------------------------------------------------------------
+  signal clk       : std_logic := '0';
+  signal arst      : std_logic := '0';
 
 begin
 
   -----------------------------------------------------------------------------
   -- Instantiate test harness
   -----------------------------------------------------------------------------
-
-  -- Todo: Create instance of harness here
+  i_test_harness : entity work.axistream_uart_uvvm_th
+    generic map (
+      GC_AXIS_VVC_TRANSMIT_IDX => C_AXIS_VVC_TRANSMIT_IDX,
+      GC_AXIS_VVC_RECEIVE_IDX  => C_AXIS_VVC_RECEIVE_IDX,
+      GC_UART_VVC_IDX          => C_UART_VVC_IDX)
+    port map (
+      arst => arst
+      );
 
   ------------------------------------------------
   -- Sequencer process
@@ -62,8 +86,14 @@ begin
     procedure test_case_uart_receive (void : t_void) is
       constant data : t_slv_array(0 to 3)(7 downto 0) := (x"1A", x"FC", x"37", x"E2");
     begin
+      for byte_num in 0 to 3 loop
+        uart_transmit(UART_VVCT, C_UART_VVC_IDX, TX, data(byte_num), "Transmit data with UART VVC");
+      end loop;
 
-      -- Todo: Write a test case for transmit
+      axistream_expect(AXISTREAM_VVCT, C_AXIS_VVC_RECEIVE_IDX, data, "Receive same data with UART DUT");
+      
+      await_completion(AXISTREAM_VVCT, C_AXIS_VVC_RECEIVE_IDX, 1000 us, C_SCOPE);
+      await_completion(UART_VVCT, C_UART_VVC_IDX, TX, 4*1000 us, C_SCOPE);
       
     end procedure test_case_uart_receive;
 
@@ -71,8 +101,18 @@ begin
       constant data_tx : t_slv_array(0 to 3)(7 downto 0) := (x"1A", x"FC", x"37", x"E2");
       constant data_rx : t_slv_array(0 to 3)(7 downto 0) := (x"DE", x"13", x"9C", x"7A");
     begin
+      axistream_transmit(AXISTREAM_VVCT, C_AXIS_VVC_TRANSMIT_IDX, data_tx, "Transmit data with UART DUT");
+      axistream_expect(AXISTREAM_VVCT, C_AXIS_VVC_RECEIVE_IDX, data_rx, "Receive data with UART DUT");
+      
+      for byte_num in 0 to 3 loop
+        uart_transmit(UART_VVCT, C_UART_VVC_IDX, TX, data_rx(byte_num), "Transmit data with UART VVC");
+        uart_expect(UART_VVCT, C_UART_VVC_IDX, RX, data_tx(byte_num), "Receive data with UART VVC");
+      end loop;
 
-      -- Todo: Write a test case for simultaneous transmit and receive
+      await_completion(AXISTREAM_VVCT, C_AXIS_VVC_TRANSMIT_IDX, 1000 us, C_SCOPE);
+      await_completion(AXISTREAM_VVCT, C_AXIS_VVC_RECEIVE_IDX, 1000 us, C_SCOPE);
+      await_completion(UART_VVCT, C_UART_VVC_IDX, RX, 4*1000 us, C_SCOPE);
+      await_completion(UART_VVCT, C_UART_VVC_IDX, TX, 4*1000 us, C_SCOPE);
       
     end procedure test_case_uart_simultaneous_transmit_receive;
 
@@ -93,9 +133,10 @@ begin
     -----------------------------------------------------------------------------
     await_uvvm_initialization(VOID);
 
-    -- Todo:
-    -- * Start clock generator VVC
-    -- * Generate reset pulse for DUT
+    start_clock(CLOCK_GENERATOR_VVCT, 0, "Start clock generator");
+
+    gen_pulse(arst, '1', 10 * C_CLK_PERIOD, "Pulsed reset-signal - active for 10 clock periods");
+    wait for C_CLK_PERIOD * 10;
 
     -----------------------------------------------------------------------------
     -- Set UVVM verbosity level
@@ -120,9 +161,10 @@ begin
     -----------------------------------------------------------------------------
     -- UART VVC config
     -----------------------------------------------------------------------------
-
-    -- Todo:
-    -- * Set up configuration for UART BFM/VVC
+    v_uart_bfm_config.parity                              := PARITY_NONE;
+    v_uart_bfm_config.bit_time                            := (1 sec) / 115200;
+    shared_uart_vvc_config(RX, C_UART_VVC_IDX).bfm_config := v_uart_bfm_config;
+    shared_uart_vvc_config(TX, C_UART_VVC_IDX).bfm_config := v_uart_bfm_config;
 
     -----------------------------------------------------------------------------
     -- Test sequence
@@ -131,12 +173,10 @@ begin
 
     if GC_TESTCASE = "TC_UART_TRANSMIT" then
       test_case_uart_transmit(VOID);
-
-    -- Todo: Add other test cases
-      
-    -- elsif GC_TESTCASE = .....
-
-
+    elsif GC_TESTCASE = "TC_UART_RECEIVE" then
+      test_case_uart_receive(VOID);
+    elsif GC_TESTCASE = "TC_UART_SIMULTANEOUS_TRANSMIT_RECEIVE" then
+      test_case_uart_simultaneous_transmit_receive(VOID);
     end if;
 
     -----------------------------------------------------------------------------

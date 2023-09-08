@@ -63,14 +63,29 @@ begin
   axistream_if_transmit.tid   <= (others => '0');
   axistream_if_transmit.tdest <= (others => '0');
 
-  -- Todo: Unused signals for receive interface
+  axistream_if_receive.tkeep <= (others => '1');
+  axistream_if_receive.tuser <= (others => '0');
+  axistream_if_receive.tstrb <= (others => '0');
+  axistream_if_receive.tid   <= (others => '0');
+  axistream_if_receive.tdest <= (others => '0');
 
   i_ti_uvvm_engine : entity uvvm_vvc_framework.ti_uvvm_engine;
 
-
-  -- Todo:
-  -- * Create instance of DUT (axistream_uart)
-  -- * Connect to the axistream interfaces used with VVCs
+  i_dut : entity work.axistream_uart
+    generic map (
+      GC_BAUDRATE => C_BAUDRATE,
+      GC_CLK_FREQ => C_CLK_FREQ)
+    port map (
+      clk                    => clk,
+      rst                    => arst,
+      rxd                    => dut_rxd,
+      txd                    => dut_txd,
+      s_axis_transmit_tdata  => axistream_if_transmit.tdata,
+      s_axis_transmit_tvalid => axistream_if_transmit.tvalid,
+      s_axis_transmit_tready => axistream_if_transmit.tready,
+      m_axis_receive_tdata   => axistream_if_receive.tdata,
+      m_axis_receive_tvalid  => axistream_if_receive.tvalid,
+      m_axis_receive_tready  => axistream_if_receive.tready);
 
   i_axistream_vvc_transmit : entity bitvis_vip_axistream.axistream_vvc
     generic map (
@@ -86,10 +101,27 @@ begin
       axistream_vvc_if => axistream_if_transmit
       );
 
-  -- Todo:
-  -- * Create instance of VVC for UART
-  -- * Note: One instance of UART VVC handles both Rx + Tx
+  i_axistream_vvc_receive : entity bitvis_vip_axistream.axistream_vvc
+    generic map (
+      GC_VVC_IS_MASTER => false,
+      GC_DATA_WIDTH    => 8,
+      GC_USER_WIDTH    => 1,
+      GC_ID_WIDTH      => 1,
+      GC_DEST_WIDTH    => 1,
+      GC_INSTANCE_IDX  => GC_AXIS_VVC_RECEIVE_IDX
+    )
+    port map (
+      clk              => clk,
+      axistream_vvc_if => axistream_if_receive
+      );
 
+  i_uart_vvc : entity bitvis_vip_uart.uart_vvc
+    generic map (
+      GC_DATA_WIDTH   => 8,
+      GC_INSTANCE_IDX => GC_UART_VVC_IDX)
+    port map (
+      uart_vvc_rx => dut_txd,
+      uart_vvc_tx => dut_rxd);
 
   -- Clock generator 50 MHz
   i1_clock_generator_vvc : entity bitvis_vip_clock_generator.clock_generator_vvc
