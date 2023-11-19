@@ -22,6 +22,8 @@ jobs:
     steps:
       - name: '🧰 Checkout'
         uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - name: Setup GHDL
         uses: ghdl/setup-ghdl-ci@nightly
@@ -33,5 +35,5 @@ jobs:
 
       - name: Run HDLregression simulation
         run: |
-          cd run
+          cd $GITHUB_WORKSPACE/run
           python ../scripts/run.py -s ghdl
