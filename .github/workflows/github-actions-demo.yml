@@ -16,3 +16,17 @@ jobs:
         run: |
           ls ${{ github.workspace }}
       - run: echo "🍏 This job's status is ${{ job.status }}."
+
+  Simulation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: '🧰 Checkout'
+        uses: actions/checkout@v4
+
+      - name: Setup GHDL
+        uses: ghdl/setup-ghdl-ci@nightly
+        with:
+          backend: gcc
+
+      - name: Print GHDL version
+        run: ghdl --version
