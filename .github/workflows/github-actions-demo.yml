@@ -35,5 +35,7 @@ jobs:
 
       - name: Run HDLregression simulation
         run: |
-          cd $GITHUB_WORKSPACE/run
+          cd $GITHUB_WORKSPACE/
+          mkdir run
+          cd run
           python ../scripts/run.py -s ghdl
