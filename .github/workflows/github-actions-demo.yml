@@ -30,3 +30,8 @@ jobs:
 
       - name: Print GHDL version
         run: ghdl --version
+
+      - name: Run HDLregression simulation
+        run: |
+          cd run
+          python ../scripts/run.py -s ghdl
