@@ -5,6 +5,12 @@ sys.path.append('../extern/hdlregression')
 from hdlregression import HDLRegression
 
 def init(hr):
+    # The command below can be used to compile all of UVVM, it is not necessary
+    # to compile individual libraries as we have done below (it is a bit faster
+    # to online compile the libraries that are actually used though).
+
+    # hr.compile_uvvm("../extern/UVVM/")
+
     # UVVM
     hr.add_files("../extern/UVVM/uvvm_util/src/*.vhd",          "uvvm_util")
     hr.add_files("../extern/UVVM/uvvm_vvc_framework/src/*.vhd", "uvvm_vvc_framework")
