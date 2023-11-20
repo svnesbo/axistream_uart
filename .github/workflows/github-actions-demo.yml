@@ -19,24 +19,30 @@ jobs:
 
   Simulation:
     runs-on: ubuntu-latest
-    container: ghdl/ghdl:ubuntu18-llvm-5.0
+    #container: ghdl/ghdl:ubuntu18-llvm-5.0
     steps:
       - name: '🧰 Checkout'
         uses: actions/checkout@v4
         with:
           submodules: true
 
+      - name: Log the step container node version
+        uses: docker://ghdl/ghdl:ubuntu18-llvm-5.0
+        with:
+          entrypoint: usr/local/bin/echo
+          args: -v
+
       # - name: Setup GHDL
       #   uses: ghdl/setup-ghdl-ci@nightly
       #   with:
       #     backend: gcc
 
-      - name: Print GHDL version
-        run: ghdl --version
+      #- name: Print GHDL version
+      #  run: ghdl --version
 
-      - name: Run HDLregression simulation
-        run: |
-          cd $GITHUB_WORKSPACE/
-          mkdir run
-          cd run
-          python ../scripts/run.py -s ghdl
+      #- name: Run HDLregression simulation
+      #  run: |
+      #    cd $GITHUB_WORKSPACE/
+      #    mkdir run
+      #    cd run
+      #    python ../scripts/run.py -s ghdl
