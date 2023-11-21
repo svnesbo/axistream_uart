@@ -26,11 +26,19 @@ jobs:
         with:
           submodules: true
 
-      - name: Log the step container node version
-        uses: docker://ghdl/ghdl:ubuntu18-llvm-5.0
-        with:
-          entrypoint: usr/local/bin/echo
-          args: -v
+      - name: 'Build Docker image with GHDL + Python'
+        - run: cd $GITHUB_WORKSPACE/
+        - run: docker build -t ghdl_image .
+
+      - name: 'Run HDLregression simulation with GHDL'
+        - run: docker run -v $GITHUB_WORKSPACE/:/work/axistream_uart/ -w /work/axistream_uart/ ghdl_image bash -c ./docker_run_sim.sh
+
+
+      # - name: Log the step container node version
+      #   uses: docker://ghdl/ghdl:ubuntu18-llvm-5.0
+      #   with:
+      #     entrypoint: usr/local/bin/echo
+      #     args: -v
 
       # - name: Setup GHDL
       #   uses: ghdl/setup-ghdl-ci@nightly
