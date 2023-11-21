@@ -39,10 +39,7 @@ def init(hr):
 def main():
     hr = HDLRegression()
     init(hr)
-
-    hr.start()
-    return
-
+    return hr.start()
 
 if __name__ == '__main__':
     sys.exit(main())
