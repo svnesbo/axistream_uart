@@ -28,7 +28,7 @@ jobs:
 
       - name: 'Build Docker image with GHDL + Python'
         run: >-
-          cd $GITHUB_WORKSPACE/
+          cd $GITHUB_WORKSPACE/ &&
           docker build -t ghdl_image .
 
       - name: 'Run HDLregression simulation with GHDL'
