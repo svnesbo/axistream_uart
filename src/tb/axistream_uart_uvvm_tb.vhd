@@ -177,6 +177,8 @@ begin
       test_case_uart_receive(VOID);
     elsif GC_TESTCASE = "TC_UART_SIMULTANEOUS_TRANSMIT_RECEIVE" then
       test_case_uart_simultaneous_transmit_receive(VOID);
+    elsif GC_TESTCASE = "TC_FAILING_TEST" then
+      tb_failure("This test failed..");
     end if;
 
     -----------------------------------------------------------------------------
