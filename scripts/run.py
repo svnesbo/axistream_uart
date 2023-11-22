@@ -36,6 +36,8 @@ def init(hr):
     hr.add_files("../src/tb/axistream_uart_uvvm_tb.vhd", "work")
     hr.add_files("../src/tb/axistream_uart_uvvm_th.vhd", "work")
 
+    hr.gen_report(report_file="sim_report.xml")
+
 def main():
     hr = HDLRegression()
     init(hr)

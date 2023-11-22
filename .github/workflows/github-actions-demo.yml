@@ -20,3 +20,10 @@ jobs:
           -w /work/axistream_uart/
           ghdl_image
           bash -c "bash -e ./docker_run_sim.sh"
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action/composite@v2
+        if: always()
+        with:
+          files: |
+            run/hdlregression/test/sim_report.xml
