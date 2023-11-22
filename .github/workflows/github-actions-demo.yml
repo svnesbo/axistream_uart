@@ -22,7 +22,7 @@ jobs:
           bash -c "bash -e ./docker_run_sim.sh"
 
       - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action/composite@v2
+        uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
         with:
           files: |
