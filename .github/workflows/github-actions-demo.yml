@@ -3,6 +3,12 @@ on: [push]
 jobs:
   Simulation:
     runs-on: ubuntu-latest
+
+    # Extra permissions required by publish test result step
+    permissions:
+      checks: write
+      pull-requests: write
+
     steps:
       - name: '🧰 Checkout'
         uses: actions/checkout@v4
