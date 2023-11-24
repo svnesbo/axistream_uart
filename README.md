@@ -1,9 +1,6 @@
 # axistream_uart
 
-This repo contains a simple UART with AXI-Stream interface written in VHDL, which is intended for educational purposes. It can be used as a very quick learning example for VHDL and verification with UVVM + HDLregression. There are several exercises and solutions that are structured in different branches (more details under *Coding exercise* below).
-
-The RTL and testbench code is gradually added in the *solution* branches. But the **main** branch contains all of the finished code and can probably be useful as a template or starting point for a module or project that uses UVVM+HDLregression.
-But note that the UART module has not been tested in hardware. It will probably work, but use at your own risk. It is also very rudimentary with configuration options (e.g. it is hardcoded for 8N1).
+This repo contains a basic UART with AXI-Stream interface written in VHDL. It is intended as a demo/intro to UVVM, HDLregression, and basic CI simulation using GHDL.
 
 # Getting started
 
@@ -44,25 +41,32 @@ Running the script with `-h` will print a help menu. Some interesting arguments 
 `-tc <testcase name>`: Run a specific test case
 
 
-# Coding exercise
+# Documentation
 
-## Part 1 - Finish the RTL code for the UART
+A block diagram of the module is shown below. The receive and transmit parts of the module are technically independent, and two AXI-Stream interfaces are used to transmit to receive a byte.
+![Block diagram](doc/axistream_uart_block_diagram.png)
 
-| [Part 1](https://github.com/svnesbo/axistream_uart/tree/part1) | [Part 1 - Solution](https://github.com/svnesbo/axistream_uart/tree/part1_solution) |
+## Baud generator
 
+The `baud_gen` module implements a simple counter that counts the number of clock cycles in a baud period, based on the generic parameters for baud rate and clock frequency (`GC_BAUDRATE` and `GC_CLK_FREQ`).
 
-## Part 2 - Build and simulate using HDLregression
+The module restarts the baud counter on the rising edge of the `enable` signal. It will count indefinetely for as long as `enable` is held high.
 
-| [Part 2](https://github.com/svnesbo/axistream_uart/tree/part2) | [Part 2 - Solution](https://github.com/svnesbo/axistream_uart/tree/part2_solution) |
+A pulse (1 clock cycle long) is generated on the `baud_pulse` output for each baud period. Depending on the value of the `GC_BAUD_RX` parameter, it is possible to have the baud pulse generated at:
+- `GC_BAUD_RX=false`: The beginning of a baud period - first pulse when `enable` goes high
+- `GC_BAUD_RX=true`: The middle of a baud period - first pulse 1/2 baud period after `enable` goes high
 
+The first mode (`GC_BAUD_RX=false`) is the intended mode for the transmit state machine (FSM), because then we'd want to start transmitting a bit immediately, and then wait a full baud period before transmitting the next bit.
 
-## Part 3 - Write a UVVM-based testbench for the UART
+The second mode (`GC_BAUD_RX=true`) is the intended mode for the receive FSM, because for the receiver we want the sample point to be in the middle of a bit period.
 
-| [Part 3](https://github.com/svnesbo/axistream_uart/tree/part3) | [Part 3 - Solution](https://github.com/svnesbo/axistream_uart/tree/part3_solution) |
+State diagrams for the transmit and receive FSMs are shown below.
 
+![UART Tx FSM](doc/uart_tx_fsm.drawio.png)
+![UART Rx FSM](doc/uart_rx_fsm.drawio.png)
 
-## Part 4 - Extend the UVVM-based testbench with individual test cases
+## UVVM testbench
 
-| [Part 4](https://github.com/svnesbo/axistream_uart/tree/part4) | [Part 4 - Solution](https://github.com/svnesbo/axistream_uart/tree/part4_solution) |
+The structure of the testbench is illustrated below. Currently there are only a few basic tests defined to test transmit, receive, and simultaneous transmit+receive.
 
-Not done yet :)
+![UVVM-based testbench and harness for the AXI-Stream UART](doc/axistream_uart_testbench.png)

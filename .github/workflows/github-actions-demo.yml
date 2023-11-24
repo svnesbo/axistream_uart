@@ -1,0 +1,35 @@
+name: AXI-Stream UART Pipeline
+on: [push]
+jobs:
+  Simulation:
+    runs-on: ubuntu-latest
+
+    # Extra permissions required by publish test result step
+    permissions:
+      checks: write
+      pull-requests: write
+
+    steps:
+      - name: '🧰 Checkout'
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: 'Build Docker image with GHDL + Python'
+        run: >-
+          cd $GITHUB_WORKSPACE/ &&
+          docker build -t ghdl_image .
+
+      - name: 'Run HDLregression simulation with GHDL'
+        run: >-
+          docker run -v $GITHUB_WORKSPACE/:/work/axistream_uart/
+          -w /work/axistream_uart/
+          ghdl_image
+          bash -c "bash -e ./docker_run_sim.sh"
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: |
+            run/hdlregression/test/sim_report.xml
