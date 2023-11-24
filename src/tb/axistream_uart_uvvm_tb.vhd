@@ -85,12 +85,13 @@ begin
 
     procedure test_case_uart_receive (void : t_void) is
       constant data : t_slv_array(0 to 3)(7 downto 0) := (x"1A", x"FC", x"37", x"E2");
+      constant data2 : t_slv_array(0 to 3)(7 downto 0) := (x"1A", x"FD", x"37", x"E2");
     begin
       for byte_num in 0 to 3 loop
         uart_transmit(UART_VVCT, C_UART_VVC_IDX, TX, data(byte_num), "Transmit data with UART VVC");
       end loop;
 
-      axistream_expect(AXISTREAM_VVCT, C_AXIS_VVC_RECEIVE_IDX, data, "Receive same data with UART DUT");
+      axistream_expect(AXISTREAM_VVCT, C_AXIS_VVC_RECEIVE_IDX, data2, "Receive same data with UART DUT");
       
       await_completion(AXISTREAM_VVCT, C_AXIS_VVC_RECEIVE_IDX, 1000 us, C_SCOPE);
       await_completion(UART_VVCT, C_UART_VVC_IDX, TX, 4*1000 us, C_SCOPE);
