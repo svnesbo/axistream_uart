@@ -1,4 +1,5 @@
 import sys
+import yappi
 
 # Path to HDLRegression:
 sys.path.append('../extern/hdlregression')
@@ -44,4 +45,26 @@ def main():
     return hr.start()
 
 if __name__ == '__main__':
-    sys.exit(main())
+    PROFILE_CODE = False
+
+    # To run this script with yappi profiler and plot results:
+    # pip install yappi
+    # pip install tuna
+    #
+    # From run/ folder:
+    # python3 ../scripts/run.py -s nvc
+    # tuna run.prof
+
+    if PROFILE_CODE:
+        yappi.set_clock_type("cpu")
+        yappi.start()
+
+        retval = main()
+
+        yappi.stop()
+        stats = yappi.get_func_stats()
+        stats.save("run.prof", "pstat")
+
+        sys.exit(retval)
+    else:
+        sys.exit(main())
